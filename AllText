@@ -1,0 +1,737 @@
+//Весь код:
+<?php
+// Файл api.php
+
+// Параметры подключения к базе данных
+$db_host = 'localhost';
+$db_user = 'root';
+$db_password = '';
+$db_name = 'lab5';
+
+// Подключение к базе данных
+$conn = new mysqli($db_host, $db_user, $db_password, $db_name);
+
+// Проверка соединения
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Пример запроса к базе данных
+$query = "SELECT * FROM my_table";
+$result = $conn->query($query);
+
+// Преобразование результата в массив
+$data = array();
+while ($row = $result->fetch_assoc()) {
+    $data[] = $row;
+}
+
+// Вывод данных в формате JSON
+header('Content-Type: application/json');
+echo json_encode($data);
+
+// Закрытие соединения
+$conn->close();
+?>
+
+package com.example.myapplication.db;
+// ApiService.java
+
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.POST;
+
+public interface ApiService {
+    @POST("api.php") // Замените на имя вашего PHP-скрипта
+    Call<Void> addData(@Body MyDataModel data);
+}
+package com.example.myapplication.db;
+
+public class MyConstants {
+    public static final String TABLE_NAME="my_table";//название таблицы
+    public static final String _ID="_id";//название 1 колоны - идентификатор
+    public static final String TITLE="title";//2 колонка
+    public static final String DISC="disc";//дискрипшин
+    public static final String DB_NAME="lab5.db";//название дб
+    public static final int DB_VERSION = 1;//версия
+    //Для создания таблицы(структура)
+    public static final String TABLE_STRUCTURE =
+            "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
+                    _ID + " INTEGER PRIMARY KEY, " +
+                    TITLE + " TEXT, " +
+                    DISC + " TEXT)";
+
+
+    //Для удаления таблицы
+    public static final String DPOR_TABLE="DROP TABLE IF EXISTS "+TABLE_NAME;//Сбрасываем если существует
+}
+
+package com.example.myapplication.db;
+
+// MyDataModel.java
+public class MyDataModel {
+    private String title;
+    private String disc;
+
+    public MyDataModel(String title, String disc) {
+        this.title = title;
+        this.disc = disc;
+    }
+}
+package com.example.myapplication.db;
+
+import android.content.Context;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+
+public class MyDbHelper extends SQLiteOpenHelper {
+    private Context context;
+    public MyDbHelper(@Nullable Context context) {
+
+        super(context, MyConstants.DB_NAME, null, MyConstants.DB_VERSION);
+        this.context = context;
+
+
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        try {
+            db.execSQL(MyConstants.TABLE_STRUCTURE);
+        } catch (SQLException e) {
+            e.printStackTrace();
+
+        }
+
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int i, int i1) {//при изменении старая дб перезаписывается на новую
+        try {
+            db.execSQL(MyConstants.DPOR_TABLE);
+            onCreate(db);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Error upgrading database: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+}
+package com.example.myapplication.db;
+
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MyDbManager {
+    private Context context;
+private  MyDbHelper myDbHelper;//оздает и обновляет дб
+    private SQLiteDatabase db;
+    public MyDbManager(Context context) {
+        this.context = context;
+        myDbHelper=new MyDbHelper(context);
+    }
+    public void openDb(){
+
+        db=myDbHelper.getWritableDatabase();//открываем для записи и тогда для считывания тоже будет работать//
+        //Toast.makeText(context, "Li2", Toast.LENGTH_LONG).show();
+        if (db != null) {
+            Log.d("MyDbManager", "Database opened successfully.");
+        } else {
+            Log.e("MyDbManager", "Failed to open the database.");
+        }
+    }
+    public void insertToDb(String title, String disc){// для записи
+        ContentValues cv =new ContentValues();
+        cv.put(MyConstants.TITLE,title);
+        cv.put(MyConstants.DISC,disc);
+        db.insert(MyConstants.TABLE_NAME,null,cv);
+        }
+     //для считывания
+    public List<String> getFromDb(){
+        List<String> tempList=new ArrayList<>();
+        Cursor cursor= db.query(MyConstants.TABLE_NAME,null,null,null,
+                null,null,null);
+        //считывание с курсора
+        while (cursor.moveToNext()){
+           @SuppressLint("Range")
+            String title = cursor.getString(cursor.getColumnIndex(MyConstants._ID))+ " - "+cursor.getString(cursor.getColumnIndex(MyConstants.TITLE))+" - "+cursor.getString(cursor.getColumnIndex(MyConstants.DISC));
+            tempList.add(title);
+        }
+        cursor.close();
+        return tempList;
+    }
+
+    public void deleteFromDb(String keyword) {
+        List<String> searchResults = new ArrayList<>();
+        String selection = MyConstants.TITLE + " LIKE ?";
+        String[] selectionArgs = new String[]{"%" + keyword + "%"};
+        db.delete(MyConstants.TABLE_NAME, selection, selectionArgs);
+    }
+    public void clearDatabase() {
+        db.execSQL("DELETE FROM " + MyConstants.TABLE_NAME);
+    //    db.close();
+    }
+
+    public List<String> searchInDb(String keyword) {
+        List<String> searchResults = new ArrayList<>();
+        String selection = MyConstants.TITLE + " LIKE ?";
+        String[] selectionArgs = new String[]{"%" + keyword + "%"};
+
+        Cursor cursor = db.query(
+                MyConstants.TABLE_NAME,
+                null,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        while (cursor.moveToNext()) {
+            @SuppressLint("Range") String title = cursor.getString(cursor.getColumnIndex(MyConstants.TITLE));
+            searchResults.add(title);
+        }
+
+        cursor.close();
+        return searchResults;
+    }
+    public void closeDb(){
+        myDbHelper.close();
+    }
+}
+
+package com.example.myapplication.db;
+
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MyDbManager {
+    private Context context;
+private  MyDbHelper myDbHelper;//оздает и обновляет дб
+    private SQLiteDatabase db;
+    public MyDbManager(Context context) {
+        this.context = context;
+        myDbHelper=new MyDbHelper(context);
+    }
+    public void openDb(){
+
+        db=myDbHelper.getWritableDatabase();//открываем для записи и тогда для считывания тоже будет работать//
+        //Toast.makeText(context, "Li2", Toast.LENGTH_LONG).show();
+        if (db != null) {
+            Log.d("MyDbManager", "Database opened successfully.");
+        } else {
+            Log.e("MyDbManager", "Failed to open the database.");
+        }
+    }
+    public void insertToDb(String title, String disc){// для записи
+        ContentValues cv =new ContentValues();
+        cv.put(MyConstants.TITLE,title);
+        cv.put(MyConstants.DISC,disc);
+        db.insert(MyConstants.TABLE_NAME,null,cv);
+        }
+     //для считывания
+    public List<String> getFromDb(){
+        List<String> tempList=new ArrayList<>();
+        Cursor cursor= db.query(MyConstants.TABLE_NAME,null,null,null,
+                null,null,null);
+        //считывание с курсора
+        while (cursor.moveToNext()){
+           @SuppressLint("Range")
+            String title = cursor.getString(cursor.getColumnIndex(MyConstants._ID))+ " - "+cursor.getString(cursor.getColumnIndex(MyConstants.TITLE))+" - "+cursor.getString(cursor.getColumnIndex(MyConstants.DISC));
+            tempList.add(title);
+        }
+        cursor.close();
+        return tempList;
+    }
+
+    public void deleteFromDb(String keyword) {
+        List<String> searchResults = new ArrayList<>();
+        String selection = MyConstants.TITLE + " LIKE ?";
+        String[] selectionArgs = new String[]{"%" + keyword + "%"};
+        db.delete(MyConstants.TABLE_NAME, selection, selectionArgs);
+    }
+    public void clearDatabase() {
+        db.execSQL("DELETE FROM " + MyConstants.TABLE_NAME);
+    //    db.close();
+    }
+
+    public List<String> searchInDb(String keyword) {
+        List<String> searchResults = new ArrayList<>();
+        String selection = MyConstants.TITLE + " LIKE ?";
+        String[] selectionArgs = new String[]{"%" + keyword + "%"};
+
+        Cursor cursor = db.query(
+                MyConstants.TABLE_NAME,
+                null,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        while (cursor.moveToNext()) {
+            @SuppressLint("Range") String title = cursor.getString(cursor.getColumnIndex(MyConstants.TITLE));
+            searchResults.add(title);
+        }
+
+        cursor.close();
+        return searchResults;
+    }
+    public void closeDb(){
+        myDbHelper.close();
+    }
+}
+package com.example.myapplication;
+
+import android.app.Service;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.os.IBinder;
+
+import androidx.annotation.Nullable;
+
+public class BackgroundMusicService extends Service {
+    private MediaPlayer mediaPlayer;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mediaPlayer = MediaPlayer.create(this, R.raw.m1);
+        mediaPlayer.setLooping(true); // Чтобы музыка проигрывалась в цикле.
+      //  mediaPlayer.start();
+
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        mediaPlayer.start();
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        mediaPlayer.stop();
+        mediaPlayer.release();
+        super.onDestroy();
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+}
+// MainActivity.java
+package com.example.myapplication;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import com.example.myapplication.db.ApiService;
+import com.example.myapplication.db.MyDataModel;
+import com.example.myapplication.db.MyDbManager;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class MainActivity extends AppCompatActivity {
+    private MyDbManager myDbManager;
+    private EditText idTitle, idDisc, idSearch;
+    private TextView tvTest;
+                         private ApiService apiService;
+    private BroadcastReceiver receiver;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        myDbManager = new MyDbManager(this);
+        idTitle = findViewById(R.id.idTitle);
+        idDisc = findViewById(R.id.idDisc);
+        idSearch = findViewById(R.id.idSearch);
+        tvTest = findViewById(R.id.tvTest);
+        myDbManager.openDb();
+        String channelId = "my_notification_channel";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId, "My Notification Channel", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+                                // Инициализируем Retrofit и ApiService
+                                Retrofit retrofit = new Retrofit.Builder()
+                                        .baseUrl("http://your-server-url/") // Замените на URL вашего веб-сервера
+                                        .addConverterFactory(GsonConverterFactory.create())
+                                        .build();
+
+        apiService = retrofit.create(ApiService.class);
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if ("com.example.myapplication.REQUEST_NOTIFICATION_PERMISSION".equals(intent.getAction())) {
+                    // Здесь запросите разрешение и выполните необходимые действия
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 123);
+                }
+            }
+        };
+        // Регистрация приемника для обновления tvTest
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if ("com.example.myapplication.UPDATE_TEXT_VIEW".equals(intent.getAction())) {
+                    String text = intent.getStringExtra("text");
+                    updateTextView(text);
+                }
+            }
+        };
+        registerReceiver(receiver, new IntentFilter("com.example.myapplication.UPDATE_TEXT_VIEW"));
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(receiver, new IntentFilter("com.example.myapplication.REQUEST_NOTIFICATION_PERMISSION"));
+
+        updateUI();
+    }
+
+    public void onClickSave(View view) {
+    //    myDbManager.insertToDb(idTitle.getText().toString(), idDisc.getText().toString());
+                            // Создаем объект MyDataModel и отправляем на сервер
+                            MyDataModel myData = new MyDataModel(idTitle.getText().toString(), idDisc.getText().toString());
+                            sendDataToServer(myData);
+        updateUI();
+
+    }
+
+                            private void sendDataToServer(MyDataModel data) {
+                                Call<Void> call = apiService.addData(data);
+
+                                call.enqueue(new Callback<Void>() {
+                                    @Override
+                                    public void onResponse(Call<Void> call, Response<Void> response) {
+                                        // Обработка успешного ответа от сервера
+                                        updateUI(); // Обновляем UI после успешной отправки данных
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        // Обработка ошибки
+                                        Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+    public void onClickImport(View view) {
+        // Обработчик события нажатия кнопки "Импорт слов"
+        startImportThread();
+     //   new ImportDataTask().execute(); // Запускаем задачу в отдельном потоке
+    }
+
+    public void onClickDelete(View view) {
+        String titleToDelete = idSearch.getText().toString();
+
+
+       new AlertDialog.Builder(this)
+                .setTitle("Подтверждение удаления")
+                .setMessage("Вы уверены, что хотите удалить данные?")
+                .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // Если пользователь нажимает "Да", то удаляем данные из базы
+                        myDbManager.deleteFromDb(titleToDelete);
+                        updateUI();
+                    }
+                })
+                .setNegativeButton("Отмена", null) // Если пользователь нажимает "Отмена", ничего не происходит
+                .show();
+    }
+
+    public void onClickSearch(View view) {
+        String keyword = idSearch.getText().toString();
+        tvTest.setText("");
+        for (String title : myDbManager.searchInDb(keyword)) {
+            tvTest.append(title);
+            tvTest.append("\n");
+        }
+    }
+    public void onClickClearDatabase(View view) {
+        // Создайте диалоговое окно для подтверждения
+        new AlertDialog.Builder(this)
+                .setTitle("Подтверждение очистки базы данных")
+                .setMessage("Вы уверены, что хотите удалить все данные из базы данных? Это действие нельзя будет отменить.")
+                .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // Если пользователь нажимает "Да", то очищаем базу данных
+                        myDbManager.clearDatabase();
+                        updateUI();
+                    }
+                })
+                .setNegativeButton("Отмена", null) // Если пользователь нажимает "Отмена", ничего не происходит
+                .show();
+    }
+
+    private void updateUI() {
+        tvTest.setText("");
+        for (String title : myDbManager.getFromDb()) {
+            tvTest.append(title);
+            tvTest.append("\n");
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiver);
+        myDbManager.closeDb();
+    }
+    /////////ИСПОРТ
+    private void startImportThread() {
+        // Показать Toast с сообщением о начале импорта
+        Toast.makeText(this, "Импорт данных начался", Toast.LENGTH_SHORT).show();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // В отдельном потоке выполняем импорт данных
+                final List<String> importedWords = WebDataImporter.importWordsFromWebsite("https://studynow.ru/dicta/allwords");
+
+                // Вернуться на главный поток для обновления UI
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Обновить пользовательский интерфейс и отобразить импортированные данные
+                        StringBuilder wordListText = new StringBuilder();
+                        for (String word : importedWords) {
+                            // Определение индекса пробела после первых двух символов
+                            int spaceIndex = word.indexOf(" ", 3);
+
+                            // Проверка наличия пробела и наличия символов после него
+                            if (spaceIndex != -1 && spaceIndex < word.length() - 1) {
+                                // Получение слова для первой колонки (с 3 символа до пробела)
+                                String firstColumn = word.substring(3, spaceIndex);
+
+                                // Получение оставшейся части для второй колонки (после пробела)
+                                String secondColumn = word.substring(spaceIndex + 1);
+
+                                // Добавление данных в базу
+                                myDbManager.insertToDb(firstColumn, secondColumn);
+
+                                // Добавление данных в текстовое представление
+                                wordListText.append(firstColumn).append(" | ").append(secondColumn).append("\n");
+                            }
+                        }
+                        tvTest.setText(wordListText.toString());
+
+                        // Показать Toast с сообщением об окончании импорта
+                        Toast.makeText(MainActivity.this, "Импорт данных завершен", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }).start();
+    }
+    public void onClickPlayMusic(View view) {
+        Log.d("MainActivity", "onClickPlayMusic: Starting BackgroundMusicService");
+        startService(new Intent(this, BackgroundMusicService.class));
+
+    }
+    public void updateTextView(String text) {
+        tvTest.setText(text);
+    }
+    public void onClickImport2(View view) {
+        Intent intent = new Intent(this, WordImportService.class);
+        startService(intent);
+
+    }
+
+    public void onClickStopMusic(View view) {
+        stopService(new Intent(this, BackgroundMusicService.class));
+    }
+
+
+}
+package com.example.myapplication;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WebDataImporter {
+
+    public static List<String> importWordsFromWebsite(String url) {
+        List<String> wordsList = new ArrayList<>();
+        try {
+            Document document = Jsoup.connect(url).get();
+            Elements wordElements = document.select("table#wordlist tr");
+
+            for (Element wordElement : wordElements) {
+                String word = wordElement.text();
+                wordsList.add(word);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wordsList;
+    }
+}
+package com.example.myapplication;
+
+import android.annotation.SuppressLint;
+import android.app.IntentService;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.myapplication.db.MyDbManager;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WordImportService extends IntentService {
+
+    public WordImportService() {
+        super("WordImportService");
+    }
+
+    @SuppressLint("WrongThread")
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        // Запуск AsyncTask для выполнения сетевого запроса в фоновом режиме
+        new ImportWordsTask().execute();
+    }
+
+    private class ImportWordsTask extends AsyncTask<Void, String, List<String>> {
+
+        @Override
+        protected List<String> doInBackground(Void... voids) {
+            // Логика импорта слов с сайта
+            String url = "https://studynow.ru/dicta/allwords";
+            List<String> importedWords = WebDataImporter.importWordsFromWebsite("https://studynow.ru/dicta/allwords");
+            List<String> wordsList = new ArrayList<>();
+            try {
+                Document document = Jsoup.connect(url).get();
+                Elements wordElements = document.select("table#wordlist tr");
+
+                for (Element wordElement : wordElements) {
+                    String word = wordElement.text();
+                    wordsList.add(word);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Имитация вывода информации в течение импорта (замените на реальный код)
+            for (int i = 0; i < 5; i++) {
+                publishProgress("Прогресс: " + (i + 1) * 20 + "%");
+                try {
+                    Thread.sleep(1000); // имитация длительной операции
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return wordsList;
+        }
+MyDbManager MM;
+        @Override
+        protected void onProgressUpdate(String... values) {
+            // Вызывается в главном потоке при вызове publishProgress в doInBackground
+            Log.d("ImportProgress", values[0]);
+            // Здесь вы можете обновить UI с информацией о прогрессе (например, через broadcast)
+        }
+
+        @Override
+        protected void onPostExecute(List<String> importedWords) {
+            // Вызывается после завершения сетевого запроса
+      //      MM.insertToDb("g","f");
+            // Отправка уведомления
+            sendNotification("Import completed", "Words imported successfully!");
+            // Обновление TextView
+            StringBuilder wordListText = new StringBuilder();
+            for (String word : importedWords) {
+                // Добавление каждого слова к StringBuilder
+                wordListText.append(word).append("\n");
+            }
+
+            // Получение активности и обновление TextView
+            Intent updateIntent = new Intent("com.example.myapplication.UPDATE_TEXT_VIEW");
+            updateIntent.putExtra("text", wordListText.toString());
+            sendBroadcast(updateIntent);
+        }
+    }
+    private void sendNotification(String title, String message) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "my_notification_channel")
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+// Проверяем разрешение на отправку уведомлений
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            // Разрешение предоставлено, выполняем отправку уведомления
+            notificationManager.notify(0, builder.build());
+        } else {
+            // Разрешение не предоставлено, обработайте этот случай
+            Intent permissionIntent = new Intent("com.example.myapplication.REQUEST_NOTIFICATION_PERMISSION");
+            sendBroadcast(permissionIntent);
+        }
+
+    }
+}
