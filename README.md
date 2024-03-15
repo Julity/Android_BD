@@ -1,5 +1,3 @@
-# Создано https://www.toptal.com/developers/gitignore/api/androidstudio
-# Редактировать на https://www.toptal.com/developers/gitignore?templates=androidstudio
 
 ### AndroidStudio ###
 # Охватывает файлы, которые следует игнорировать при разработке Android с использованием Android Studio.
