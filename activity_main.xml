@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- activity_main.xml -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/idTitle"
+        android:layout_width="278dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="65dp"
+        android:layout_marginTop="21dp"
+        android:layout_marginEnd="68dp"
+        android:hint="Title" />
+
+    <EditText
+        android:id="@+id/idDisc"
+        android:layout_width="278dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/idTitle"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="72dp"
+        android:layout_marginEnd="67dp"
+        android:hint="Description" />
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Сохранить"
+        android:layout_below="@id/idDisc"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:onClick="onClickSave"/>
+
+    <EditText
+        android:id="@+id/idSearch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search by Title"
+        android:layout_below="@id/btnSave"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"/>
+
+    <Button
+        android:id="@+id/btnSearch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Поиск"
+        android:layout_below="@id/idSearch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:onClick="onClickSearch"/>
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Удалить"
+        android:layout_below="@id/btnSearch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:onClick="onClickDelete"/>
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnDelete"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/tvTest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btnDelete"
+            android:layout_marginTop="16dp"
+            android:gravity="center_horizontal"/>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/but_imp"
+        android:layout_width="162dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="9dp"
+        android:onClick="onClickImport"
+        android:text="Импорт" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="151dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="128dp"
+        android:layout_marginEnd="132dp"
+        android:text="Слово:" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="147dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/idTitle"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="132dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="132dp"
+        android:text="Транскрипция:" />
+
+    <Button
+        android:id="@+id/btnClearDatabase"
+        android:layout_width="161dp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/but_imp"
+        android:layout_marginBottom="5dp"
+        android:onClick="onClickClearDatabase"
+        android:text="Очистить базу" />
+
+
+    <Button
+        android:id="@+id/but_imp1"
+        android:layout_width="162dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="253dp"
+        android:layout_marginBottom="114dp"
+        android:onClick="onClickImport2"
+        android:text="ИмпортСервис" />
+
+    <Button
+        android:id="@+id/btnPlayMusic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnClearDatabase"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="-46dp"
+        android:layout_marginEnd="13dp"
+        android:onClick="onClickPlayMusic"
+        android:text="Play Music" />
+
+    <Button
+        android:id="@+id/btnStopMusic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnPlayMusic"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="6dp"
+        android:onClick="onClickStopMusic"
+        android:text="Stop Music" />
+
+
+</RelativeLayout>
